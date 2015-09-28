@@ -15,7 +15,6 @@ var playSound = function (buffer) {
 }
 
 var updateValues = function (values) {
-  console.log(values);
   values.forEach(function (value) {
     document.getElementById(value.name).getElementsByClassName('count')[0].innerHTML = value.count;
   });
