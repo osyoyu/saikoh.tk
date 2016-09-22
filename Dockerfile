@@ -6,6 +6,10 @@ RUN \
     build-essential zlib1g-dev libssl-dev libreadline-dev libyaml-dev libxml2-dev libxslt-dev \
     ruby2.3 ruby2.3-dev
 
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.utf8
+ENV LC_ALL en_US.UTF-8
+
 RUN gem update --system && gem install bundler
 
 RUN mkdir /saikoh.tk
