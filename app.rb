@@ -10,7 +10,7 @@ class SaikohTk < Sinatra::Base
   configure do
     set :redis_url, ENV['REDIS_URL'] || 'redis://localhost:6379'
 
-    Redis::Objects.redis = ConnectionPool.new(size: 5, timeout: 5) { Redis.new }
+    Redis::Objects.redis = ConnectionPool.new(size: 5, timeout: 5) { Redis.new(url: settings.redis_url) }
   end
 
   helpers do
