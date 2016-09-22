@@ -7,7 +7,7 @@ require 'connection_pool'
 
 require 'json'
 
-require_relative './button.rb'
+require_relative './counter.rb'
 
 class SaikohTk < Sinatra::Base
   configure do
@@ -17,28 +17,28 @@ class SaikohTk < Sinatra::Base
   end
 
   helpers do
-    def buttons
-      Thread.current[:buttons] ||= {
-        saikoh: Button.new(1, '最高', 'saikoh'),
-        emoi:   Button.new(2, 'エモい', 'emoi'),
-        imagine_the_future:   Button.new(3, 'IMAGINE THE FUTURE', 'imagine-the-future'),
-        we_are_the_champions: Button.new(4, 'We Are the Champions', 'we-are-the-champions')
-      }
+    def counters
+      Thread.current[:counters] ||= [
+        Counter.new(1, 'saikoh', '最高'),
+        Counter.new(2, 'emoi', 'エモい'),
+        Counter.new(3, 'imagine_the_future', 'IMAGINE THE FUTURE'),
+        Counter.new(4, 'we_are_the_champions', 'We Are the Champions')
+      ]
     end
 
-    def incr_button(name)
-      halt 400 unless buttons.has_key?(name)
+    def incr_counter(name)
+      counter = counters.find do |counter|
+        counter.name.value == name
+      end
 
-      button = buttons[name]
-      count = button.count.incr
+      raise StandardError.new("No such counter #{name}") if counter.nil?
+
+      count = counter.count.incr
 
       websockets.each do |ws|
         ws.send({
           type: 'update',
-          data: {
-            slug: name,
-            value: count
-          }
+          data: counter.as_json
         }.to_json)
       end
 
@@ -52,9 +52,10 @@ class SaikohTk < Sinatra::Base
     def handle_message(message)
       case message[:type]
       when "incr"
-        if message.dig(:data, :slug)
-          button_slug = message.dig(:data, :slug).to_sym
-          incr_button(button_slug) if buttons.has_key?(button_slug)
+        name = message.dig(:data, :name)
+        begin
+          incr_counter(name)
+        rescue StandardError => e
         end
       end
     end
@@ -64,13 +65,17 @@ class SaikohTk < Sinatra::Base
   # Web endpoints
   #
   get '/' do
-    @buttons = buttons
+    @counters = counters
 
     slim :index
   end
 
-  get '/:button/incr' do
-    incr_button(params[:button].to_sym)
+  get '/:counter/incr' do
+    begin
+      incr_counter(params[:counter])
+    rescue StandardError => e
+      halt 400
+    end
 
     redirect '/'
   end
@@ -78,8 +83,12 @@ class SaikohTk < Sinatra::Base
   #
   # JSON APIs
   #
-  get '/api/:button/incr' do
-    incr_button(params[:button].to_sym)
+  get '/api/:counter/incr' do
+    begin
+      incr_counter(params[:counter])
+    rescue StandardError => e
+      halt 400
+    end
 
     content_type :json
     button.to_json
@@ -87,8 +96,7 @@ class SaikohTk < Sinatra::Base
 
   #
   # WebSocket APIs
-  # Hidden feature: When a WebSocket connection is established, a trailing '.'
-  #                 will appear after 'IMAGINE THE FUTURE' !
+  # Hidden feature: A trailing '.' will appear after 'ITF.' when a WebSocket connection is established!
   #
   get '/api/websocket' do
     return 404 unless request.websocket?

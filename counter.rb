@@ -2,27 +2,31 @@ require 'redis'
 require 'redis-objects'
 require 'connection_pool'
 
-class Button
+class Counter
   include Redis::Objects
   value :name
-  value :slug
+  value :label
   counter :count, start: 0
 
-  def initialize(id, name, slug)
+  def initialize(id, name, label)
     @id = id
     self.name.value = name
-    self.slug.value = slug
+    self.label.value = label
   end
 
   def id
     @id
   end
 
-  def to_json
+  def as_json
     {
       name: self.name,
-      slug: self.slug,
+      label: self.label,
       count: self.count
-    }.to_json
+    }
+  end
+
+  def to_json
+    JSON.generate(self.as_json)
   end
 end
