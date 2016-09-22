@@ -1,0 +1,26 @@
+{
+  "name": "saikoh.tk",
+  "version": "1.0.0",
+  "description": "saikoh.tk",
+  "main": "index.js",
+  "dependencies": {
+    "reconnecting-websocket": "^1.4.4"
+  },
+  "devDependencies": {
+    "babelify": "^7.3.0",
+    "watchify": "^3.7.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/osyoyu/saikoh.tk.git"
+  },
+  "author": "",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/osyoyu/saikoh.tk/issues"
+  },
+  "homepage": "https://github.com/osyoyu/saikoh.tk#readme"
+}
