@@ -9,10 +9,12 @@ var ReconnectingWebSocket = require('reconnecting-websocket');
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 var audioContext = new AudioContext();
+var gainNode = audioContext.createGain();
+gainNode.connect(audioContext.destination);
 
 // an ad-hoc function to show/hide the trailing '.' of 'ITF.'
 function updateWebSocketStatusIndicator(status) {
-  var $itf = document.querySelector('tr.counter[data-counter-name="imagine-the-future"] .counter-name');
+  var $itf = document.querySelector('tr.counter[data-counter-name="imagine-the-future"] .counter-label');
 
   if ($itf) {
     if (status) {
@@ -23,17 +25,51 @@ function updateWebSocketStatusIndicator(status) {
   }
 }
 
+function fetchFile(path) {
+  return new Promise(function (resolve, reject) {
+    var request = new XMLHttpRequest();
+    request.open('GET', path, true);
+    request.responseType = 'arraybuffer';
+    request.onload = function () {
+      resolve(request.response);
+    };
+    request.onerror = function () {
+      reject(err);
+    };
+
+    request.send();
+  });
+}
+
 var Counter = function () {
   function Counter(name, node) {
+    var _this = this;
+
     _classCallCheck(this, Counter);
 
     this.name = name;
     this.$node = node;
+
+    // fetch audio file and decode
+    fetchFile('/audio/' + name + '.mp3').then(function (data) {
+      audioContext.decodeAudioData(data, function (buffer) {
+        _this.audioBuffer = buffer;
+      });
+    });
   }
 
   _createClass(Counter, [{
+    key: 'playSound',
+    value: function playSound() {
+      var source = audioContext.createBufferSource();
+      source.connect(gainNode);
+      source.buffer = this.audioBuffer;
+      source.start();
+    }
+  }, {
     key: 'onClick',
     value: function onClick() {
+      this.playSound();
       command.incr(this.name);
     }
   }, {
@@ -48,7 +84,7 @@ var Counter = function () {
 
 var Command = function () {
   function Command() {
-    var _this = this;
+    var _this2 = this;
 
     _classCallCheck(this, Command);
 
@@ -56,16 +92,16 @@ var Command = function () {
 
     var ws = new ReconnectingWebSocket('ws://' + window.location.host + '/api/websocket');
     ws.addEventListener('open', function () {
-      _this.isWebSocketEstablished = true;
+      _this2.isWebSocketEstablished = true;
       updateWebSocketStatusIndicator(true);
     });
-    ws.addEventListener('open', function () {
-      _this.isWebSocketEstablished = false;
+    ws.addEventListener('close', function () {
+      _this2.isWebSocketEstablished = false;
       updateWebSocketStatusIndicator(false);
     });
     ws.onmessage = function (e) {
       var signal = JSON.parse(e.data);
-      _this.onSignal(signal);
+      _this2.onSignal(signal);
     };
 
     this.ws = ws;
@@ -74,7 +110,7 @@ var Command = function () {
   _createClass(Command, [{
     key: 'incr',
     value: function incr(name) {
-      if (this.isWebSocketEstablished) {
+      if (this.isWebSocketEstablished === true) {
         this.ws.send(JSON.stringify({
           type: 'incr',
           data: {
@@ -112,7 +148,7 @@ window.addEventListener('DOMContentLoaded', function () {
 
   var _loop = function _loop(i) {
     var $counter = $counters[i];
-    var name = $counter.dataset.counterName;
+    var name = $counter.dataset.counterName.replace(/-/g, '_');
 
     var counter = new Counter(name, $counter);
     counters[name] = counter;

@@ -54,7 +54,7 @@ class SaikohTk < Sinatra::Base
       when "incr"
         name = message.dig(:data, :name)
         counter = find_counter_by_name(name)
-        incr_counter unless counter.nil?
+        incr_counter(counter) unless counter.nil?
       end
     end
   end
@@ -85,7 +85,7 @@ class SaikohTk < Sinatra::Base
     counters.map(&:to_json)
   end
 
-  get '/api/:counter' do
+  get '/api/:counter/show' do
     counter = find_counter_by_name(params[:counter])
     halt 400 if counter.nil?
 
