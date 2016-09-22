@@ -1,0 +1,22 @@
+doctype html
+html
+  head
+    meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    link rel="stylesheet" type="text/css" href="/style.css"
+
+    title saikoh.tk
+
+  body
+    table#buttons
+      - @buttons.each do |k, button|
+        - name = button.name.value
+        - slug = button.slug.value
+        - count = button.count.value
+
+        tr data-button-slug=slug
+          td
+            a href="/#{slug}/incr"
+              img src="/img/#{slug}.png"
+          td
+            span.count = count
+            = name
