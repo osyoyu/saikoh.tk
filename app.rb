@@ -26,13 +26,13 @@ class SaikohTk < Sinatra::Base
       ]
     end
 
-    def incr_counter(name)
+    def find_counter_by_name(name)
       counter = counters.find do |counter|
         counter.name.value == name
       end
+    end
 
-      raise StandardError.new("No such counter #{name}") if counter.nil?
-
+    def incr_counter(counter)
       count = counter.count.incr
 
       websockets.each do |ws|
@@ -53,10 +53,8 @@ class SaikohTk < Sinatra::Base
       case message[:type]
       when "incr"
         name = message.dig(:data, :name)
-        begin
-          incr_counter(name)
-        rescue StandardError => e
-        end
+        counter = find_counter_by_name(name)
+        incr_counter unless counter.nil?
       end
     end
   end
@@ -71,11 +69,10 @@ class SaikohTk < Sinatra::Base
   end
 
   get '/:counter/incr' do
-    begin
-      incr_counter(params[:counter])
-    rescue StandardError => e
-      halt 400
-    end
+    counter = find_counter_by_name(params[:counter])
+    halt 400 if counter.nil?
+
+    incr_counter(counter)
 
     redirect '/'
   end
@@ -83,15 +80,27 @@ class SaikohTk < Sinatra::Base
   #
   # JSON APIs
   #
-  get '/api/:counter/incr' do
-    begin
-      incr_counter(params[:counter])
-    rescue StandardError => e
-      halt 400
-    end
+  get '/api/counters' do
+    content_type :json
+    counters.map(&:to_json)
+  end
+
+  get '/api/:counter' do
+    counter = find_counter_by_name(params[:counter])
+    halt 400 if counter.nil?
 
     content_type :json
-    button.to_json
+    counter.to_json
+  end
+
+  get '/api/:counter/incr' do
+    counter = find_counter_by_name(params[:counter])
+    halt 400 if counter.nil?
+
+    incr_counter(counter)
+
+    content_type :json
+    counter.to_json
   end
 
   #
@@ -99,7 +108,7 @@ class SaikohTk < Sinatra::Base
   # Hidden feature: A trailing '.' will appear after 'ITF.' when a WebSocket connection is established!
   #
   get '/api/websocket' do
-    return 404 unless request.websocket?
+    halt 404 unless request.websocket?
 
     request.websocket do |ws|
       ws.onopen do

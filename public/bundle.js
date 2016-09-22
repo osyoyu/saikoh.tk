@@ -12,7 +12,7 @@ var audioContext = new AudioContext();
 
 // an ad-hoc function to show/hide the trailing '.' of 'ITF.'
 function updateWebSocketStatusIndicator(status) {
-  var $itf = document.querySelector('tr.counter[data-counter-slug="imagine-the-future"] .counter-name');
+  var $itf = document.querySelector('tr.counter[data-counter-name="imagine-the-future"] .counter-name');
 
   if ($itf) {
     if (status) {
@@ -24,17 +24,17 @@ function updateWebSocketStatusIndicator(status) {
 }
 
 var Counter = function () {
-  function Counter(slug, node) {
+  function Counter(name, node) {
     _classCallCheck(this, Counter);
 
-    this.slug = slug;
+    this.name = name;
     this.$node = node;
   }
 
   _createClass(Counter, [{
     key: 'onClick',
     value: function onClick() {
-      command.incr(this.slug);
+      command.incr(this.name);
     }
   }, {
     key: 'update',
@@ -52,37 +52,47 @@ var Command = function () {
 
     _classCallCheck(this, Command);
 
-    this.ws = new ReconnectingWebSocket('ws://' + window.location.host + '/api/websocket');
-    this.ws.addEventListener('open', function () {
+    this.isWebSocketEstablished = false;
+
+    var ws = new ReconnectingWebSocket('ws://' + window.location.host + '/api/websocket');
+    ws.addEventListener('open', function () {
+      _this.isWebSocketEstablished = true;
       updateWebSocketStatusIndicator(true);
     });
-    this.ws.addEventListener('close', function () {
+    ws.addEventListener('open', function () {
+      _this.isWebSocketEstablished = false;
       updateWebSocketStatusIndicator(false);
     });
-    this.ws.onmessage = function (e) {
+    ws.onmessage = function (e) {
       var signal = JSON.parse(e.data);
       _this.onSignal(signal);
     };
+
+    this.ws = ws;
   }
 
   _createClass(Command, [{
     key: 'incr',
-    value: function incr(slug) {
-      this.ws.send(JSON.stringify({
-        type: 'incr',
-        data: {
-          slug: slug
-        }
-      }));
+    value: function incr(name) {
+      if (this.isWebSocketEstablished) {
+        this.ws.send(JSON.stringify({
+          type: 'incr',
+          data: {
+            name: name
+          }
+        }));
+      } else {
+        window.location.href = '/' + name + '/incr';
+      }
     }
   }, {
     key: 'onSignal',
     value: function onSignal(signal) {
       switch (signal.type) {
         case 'update':
-          var counter = counters[signal.data.slug];
+          var counter = counters[signal.data.name];
           if (counter) {
-            counter.update(signal.data.value);
+            counter.update(signal.data.count);
           }
       }
     }
@@ -102,12 +112,17 @@ window.addEventListener('DOMContentLoaded', function () {
 
   var _loop = function _loop(i) {
     var $counter = $counters[i];
-    var slug = $counter.dataset.counterSlug;
+    var name = $counter.dataset.counterName;
 
-    var counter = new Counter(slug, $counter);
-    counters[slug] = counter;
+    var counter = new Counter(name, $counter);
+    counters[name] = counter;
 
     $counter.querySelector('a').addEventListener('click', function (e) {
+      e.preventDefault();
+      counter.onClick();
+    });
+    $counter.querySelector('a').addEventListener('touchstart', function (e) {
+      e.stopPropagation();
       e.preventDefault();
       counter.onClick();
     });
