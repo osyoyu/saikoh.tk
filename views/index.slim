@@ -3,20 +3,22 @@ html
   head
     meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     link rel="stylesheet" type="text/css" href="/style.css"
+    script type="text/javascript" src="/bundle.js"
 
     title saikoh.tk
 
   body
     table#buttons
       - @buttons.each do |k, button|
-        - name = button.name.value
+        / remove trailing dots from ITF. for the Websocket status-showing feature
+        - name = button.name.value.sub(/\.$/, '')
         - slug = button.slug.value
         - count = button.count.value
 
-        tr data-button-slug=slug
+        tr.counter data-counter-slug=slug
           td
             a href="/#{slug}/incr"
               img src="/img/#{slug}.png"
           td
             span.count = count
-            = name
+            span.counter-name = name
