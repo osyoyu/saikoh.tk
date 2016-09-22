@@ -3,7 +3,7 @@ services:
   redis:
     image: "redis:3.2"
     volumes:
-      - ./redis-data:/data
+      - "/var/docker/data/redis:/data"
     ports:
       - '6379:6379'
 
@@ -11,7 +11,7 @@ services:
     build: .
     command: bundle exec rackup -o '0.0.0.0' -p 3000
     volumes:
-      - "/var/docker/data/redis:/saikoh.tk"
+      - ".:/saikoh.tk"
     ports:
       - "60001:3000"
     environment:
