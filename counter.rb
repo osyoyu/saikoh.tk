@@ -1,5 +1,3 @@
-# coding: UTF-8
-
 require 'redis'
 require 'redis-objects'
 require 'connection_pool'

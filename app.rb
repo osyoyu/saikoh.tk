@@ -35,11 +35,13 @@ class SaikohTk < Sinatra::Base
     def incr_counter(counter)
       count = counter.count.incr
 
+      data = {
+        type: 'update',
+        data: counter.as_json
+      }.to_json
+
       websockets.each do |ws|
-        ws.send({
-          type: 'update',
-          data: counter.as_json
-        }.to_json)
+        ws.send(data)
       end
 
       return count
