@@ -1,0 +1,20 @@
+version: '2'
+services:
+  redis:
+    image: "redis:3.2"
+    ports:
+      - '6379:6379'
+
+  web:
+    build: .
+    command: bundle exec rackup -o '0.0.0.0' -p 3000
+    volumes:
+      - ".:/saikoh.tk"
+    ports:
+      - "60001:3000"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+    links:
+      - redis
