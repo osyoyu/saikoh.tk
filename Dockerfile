@@ -16,7 +16,7 @@ RUN mkdir /saikoh.tk
 WORKDIR /saikoh.tk
 ADD Gemfile /saikoh.tk/Gemfile
 ADD Gemfile.lock /saikoh.tk/Gemfile.lock
-RUN bundle install --deployment
+RUN bundle install
 ADD . /saikoh.tk
 
 EXPOSE 9292
