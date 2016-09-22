@@ -1,0 +1,23 @@
+doctype html
+html
+  head
+    meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    link rel="stylesheet" type="text/css" href="/style.css"
+    script type="text/javascript" src="/bundle.js"
+
+    title saikoh.tk
+
+  body
+    table#counters
+      - @counters.each do |counter|
+        - name = counter.name.value
+        - label = counter.label.value
+        - count = counter.count.value
+
+        tr.counter data-counter-name=name.gsub('_', '-')
+          td
+            a href="/#{name}/incr"
+              img src="/img/#{name}.png"
+          td
+            span.count = count
+            span.counter-label = label

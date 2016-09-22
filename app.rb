@@ -1,102 +1,135 @@
-require 'sinatra'
+require 'sinatra/base'
 require 'sinatra-websocket'
+
 require 'redis'
+require 'redis-objects'
+require 'connection_pool'
+
 require 'json'
 
-class Button
-  def initialize(name, label, count = 0)
-    count = (count ? count.to_i : 0)
+require_relative './counter.rb'
 
-    @name  = name
-    @label = label
-    @count = count
+class SaikohTk < Sinatra::Base
+  configure do
+    set :redis_url, ENV['REDIS_URL'] || 'redis://localhost:6379'
+
+    Redis::Objects.redis = ConnectionPool.new(size: 5, timeout: 5) { Redis.new(url: settings.redis_url) }
   end
 
-  def incr
-    @count += 1
-    redis_save(self)
-  end
-
-  def reset
-    @count = 0
-  end
-
-  attr_reader :name, :label, :count
-end
-
-def values
-  result = settings.buttons.map { |button| { name: button.name, label: button.label, count: button.count } }
-  return result
-end
-
-def reset
-  settings.button.each do |button|
-    button.reset
-  end
-end
-
-def redis_save(button)
-  Redis.new.set(button.name, button.count)
-end
-
-configure do
-  redis = Redis.new
-
-  buttons = [
-    # Button.new('ihou', '違法', redis.get('ihou')),
-    Button.new('saikou', '最高', redis.get('saikou')),
-    Button.new('emoi', 'エモい', redis.get('emoi')),
-    Button.new('imagine_the_future', 'IMAGINE THE FUTURE.', redis.get('imagine_the_future')),
-    Button.new('we_are_the_champions', 'We Are The Champions', redis.get('we_are_the_champions'))
-  ]
-
-  set :sockets, []
-  set :buttons, buttons
-end
-
-get '/' do
-  @keys = settings.buttons
-
-  erb :index
-end
-
-get '/values' do
-  return JSON.generate(values)
-end
-
-get '/ws/values' do
-  halt 404 unless request.websocket?
-
-  request.websocket do |ws|
-    ws.onopen do
-      settings.sockets.push(ws)
+  helpers do
+    def counters
+      Thread.current[:counters] ||= [
+        Counter.new(1, 'saikoh', '最高'),
+        Counter.new(2, 'emoi', 'エモい'),
+        Counter.new(3, 'imagine_the_future', 'IMAGINE THE FUTURE'),
+        Counter.new(4, 'we_are_the_champions', 'We Are the Champions')
+      ]
     end
 
-    ws.onmessage do |msg|
+    def find_counter_by_name(name)
+      counter = counters.find do |counter|
+        counter.name.value == name
+      end
     end
 
-    ws.onclose do
-      settings.sockets.delete(ws)
+    def incr_counter(counter)
+      count = counter.count.incr
+
+      data = {
+        type: 'update',
+        data: counter.as_json
+      }.to_json
+
+      websockets.each do |ws|
+        ws.send(data)
+      end
+
+      return count
+    end
+
+    def websockets
+      Thread.current[:websockets] ||= []
+    end
+
+    def handle_message(message)
+      case message[:type]
+      when "incr"
+        name = message.dig(:data, :name)
+        counter = find_counter_by_name(name)
+        incr_counter(counter) unless counter.nil?
+      end
     end
   end
-end
 
-get '/click/:key' do
-  key = params['key']
+  #
+  # Web endpoints
+  #
+  get '/' do
+    @counters = counters
 
-  button = settings.buttons.find {|button| button.name == key }
-  halt 403 if button == nil
-
-  button.incr
-
-  settings.sockets.each do |socket|
-    socket.send(JSON.generate(values))
+    slim :index
   end
 
-  return
-end
+  get '/:counter/incr' do
+    counter = find_counter_by_name(params[:counter])
+    halt 400 if counter.nil?
 
-get '/reset' do
-  reset
-  return
+    incr_counter(counter)
+
+    redirect '/'
+  end
+
+  #
+  # JSON APIs
+  #
+  get '/api/counters' do
+    content_type :json
+    counters.map(&:to_json)
+  end
+
+  get '/api/:counter/show' do
+    counter = find_counter_by_name(params[:counter])
+    halt 400 if counter.nil?
+
+    content_type :json
+    counter.to_json
+  end
+
+  get '/api/:counter/incr' do
+    counter = find_counter_by_name(params[:counter])
+    halt 400 if counter.nil?
+
+    incr_counter(counter)
+
+    content_type :json
+    counter.to_json
+  end
+
+  #
+  # WebSocket APIs
+  # Hidden feature: A trailing '.' will appear after 'ITF.' when a WebSocket connection is established!
+  #
+  get '/api/websocket' do
+    halt 404 unless request.websocket?
+
+    request.websocket do |ws|
+      ws.onopen do
+        websockets.push(ws)
+      end
+
+      ws.onclose do
+        websockets.delete(ws)
+      end
+
+      ws.onmessage do |msg|
+        begin
+          message = JSON.parse(msg, symbolize_names: true)
+        rescue JSON::ParserError => e
+          return
+        end
+
+        handle_message(message)
+      end
+    end
+  end
 end
