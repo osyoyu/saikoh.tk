@@ -10,8 +10,7 @@ html
   body
     table#buttons
       - @buttons.each do |k, button|
-        / remove trailing dots from ITF. for the Websocket status-showing feature
-        - name = button.name.value.sub(/\.$/, '')
+        - name = button.name.value
         - slug = button.slug.value
         - count = button.count.value
 

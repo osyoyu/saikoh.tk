@@ -21,7 +21,7 @@ class SaikohTk < Sinatra::Base
       Thread.current[:buttons] ||= {
         saikoh: Button.new(1, '最高', 'saikoh'),
         emoi:   Button.new(2, 'エモい', 'emoi'),
-        imagine_the_future:   Button.new(3, 'IMAGINE THE FUTURE.', 'imagine-the-future'),
+        imagine_the_future:   Button.new(3, 'IMAGINE THE FUTURE', 'imagine-the-future'),
         we_are_the_champions: Button.new(4, 'We Are the Champions', 'we-are-the-champions')
       }
     end
