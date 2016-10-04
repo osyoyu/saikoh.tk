@@ -1,0 +1,6 @@
+User-Agent: *
+Disallow: /api/*
+Disallow: /saikoh/incr
+Disallow: /emoi/incr
+Disallow: /imagine_the_future/incr
+Disallow: /we_are_the_champions/incr
