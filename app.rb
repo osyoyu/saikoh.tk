@@ -32,6 +32,12 @@ class SaikohTk < Sinatra::Base
       end
     end
 
+    def meta_description
+      counters.map do |counter|
+        "#{counter.label.value}: #{counter.count.value}"
+      end.join(", ")
+    end
+
     def incr_counter(counter)
       count = counter.count.incr
 
