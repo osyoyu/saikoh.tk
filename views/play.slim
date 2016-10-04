@@ -1,0 +1,16 @@
+doctype html
+html
+  head
+    meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    meta http-equiv="refresh" content="2; URL=/"
+    title saikoh.tk
+
+  body
+    - name = @counter.name.value
+
+    p
+      audio(controls autoplay)
+        source src="/audio/#{name}.mp3"
+
+    p
+      | JavaScript を有効にするとより最高

@@ -82,7 +82,8 @@ class SaikohTk < Sinatra::Base
 
     incr_counter(counter)
 
-    redirect '/'
+    @counter = counter
+    slim :play
   end
 
   #
