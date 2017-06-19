@@ -132,7 +132,6 @@ class SaikohTk < Sinatra::Base
         begin
           message = JSON.parse(msg, symbolize_names: true)
         rescue JSON::ParserError => e
-          return
         end
 
         handle_message(message)
