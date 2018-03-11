@@ -4,8 +4,8 @@ gem 'unicorn'
 
 gem 'sinatra'
 gem 'sinatra-websocket'
-gem 'redis'
-gem 'redis-objects'
+gem 'redis', '~> 4.0.1'
+gem 'redis-objects', '~> 1.2.1'
 gem 'connection_pool'
 
 gem 'slim'
