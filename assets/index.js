@@ -85,7 +85,15 @@ class Command {
       this.onSignal(signal);
     }
 
+    setInterval(() => { this.heartbeat(); }, 10000);
+
     this.ws = ws;
+  }
+
+  heartbeat() {
+    this.ws.send(JSON.stringify({
+      type: 'heartbeat'
+    }));
   }
 
   incr(name) {

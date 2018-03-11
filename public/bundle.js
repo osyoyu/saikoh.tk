@@ -1,32 +1,28 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-'use strict';
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var ReconnectingWebSocket = require('reconnecting-websocket');
+(function(){function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s}return e})()({1:[function(require,module,exports){
+const ReconnectingWebSocket = require('reconnecting-websocket');
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
-var audioContext = new AudioContext();
-var gainNode = audioContext.createGain();
+const audioContext = new AudioContext();
+const gainNode = audioContext.createGain();
 gainNode.connect(audioContext.destination);
+
 
 // an ad-hoc function to show/hide the trailing '.' of 'ITF.'
 function updateWebSocketStatusIndicator(status) {
-  var $itf = document.querySelector('tr.counter[data-counter-name="imagine-the-future"] .counter-label');
+  const $itf = document.querySelector('tr.counter[data-counter-name="imagine-the-future"] .counter-label');
 
   if ($itf) {
     if (status) {
       $itf.innerText = 'IMAGINE THE FUTURE.';
-    } else {
+    }
+    else {
       $itf.innerText = 'IMAGINE THE FUTURE';
     }
   }
 }
 
-function fetchFile(path) {
-  return new Promise(function (resolve, reject) {
+function fetchFile (path) {
+  return new Promise(function(resolve, reject) {
     var request = new XMLHttpRequest();
     request.open('GET', path, true);
     request.responseType = 'arraybuffer';
@@ -34,123 +30,109 @@ function fetchFile(path) {
       resolve(request.response);
     };
     request.onerror = function () {
-      reject(err);
+      reject(err)
     };
 
     request.send();
   });
 }
 
-var Counter = function () {
-  function Counter(name, node) {
-    var _this = this;
 
-    _classCallCheck(this, Counter);
-
+class Counter {
+  constructor(name, node) {
     this.name = name;
     this.$node = node;
 
     // fetch audio file and decode
-    fetchFile('/audio/' + name + '.mp3').then(function (data) {
-      audioContext.decodeAudioData(data, function (buffer) {
-        _this.audioBuffer = buffer;
+    fetchFile(`/audio/${name}.mp3`).then((data) => {
+      audioContext.decodeAudioData(data, (buffer) => {
+        this.audioBuffer = buffer;
       });
     });
   }
 
-  _createClass(Counter, [{
-    key: 'playSound',
-    value: function playSound() {
-      var source = audioContext.createBufferSource();
-      source.connect(gainNode);
-      source.buffer = this.audioBuffer;
-      source.start();
-    }
-  }, {
-    key: 'onClick',
-    value: function onClick() {
-      this.playSound();
-      command.incr(this.name);
-    }
-  }, {
-    key: 'update',
-    value: function update(value) {
-      this.$node.querySelector('.count').innerText = value;
-    }
-  }]);
+  playSound() {
+    const source = audioContext.createBufferSource();
+    source.connect(gainNode);
+    source.buffer = this.audioBuffer;
+    source.start();
+  }
 
-  return Counter;
-}();
+  onClick() {
+    this.playSound();
+    command.incr(this.name);
+  }
 
-var Command = function () {
-  function Command() {
-    var _this2 = this;
+  update(value) {
+    this.$node.querySelector('.count').innerText = value;
+  }
+}
 
-    _classCallCheck(this, Command);
-
+class Command {
+  constructor() {
     this.isWebSocketEstablished = false;
 
-    var ws = new ReconnectingWebSocket('ws://' + window.location.host + '/api/websocket');
-    ws.addEventListener('open', function () {
-      _this2.isWebSocketEstablished = true;
+    let ws = new ReconnectingWebSocket('ws://' + window.location.host + '/api/websocket');
+    ws.addEventListener('open', () => {
+      this.isWebSocketEstablished = true;
       updateWebSocketStatusIndicator(true);
     });
-    ws.addEventListener('close', function () {
-      _this2.isWebSocketEstablished = false;
+    ws.addEventListener('close', () => {
+      this.isWebSocketEstablished = false;
       updateWebSocketStatusIndicator(false);
     });
-    ws.onmessage = function (e) {
-      var signal = JSON.parse(e.data);
-      _this2.onSignal(signal);
-    };
+    ws.onmessage = (e) => {
+      const signal = JSON.parse(e.data);
+      this.onSignal(signal);
+    }
+
+    setInterval(() => { this.heartbeat(); }, 10000);
 
     this.ws = ws;
   }
 
-  _createClass(Command, [{
-    key: 'incr',
-    value: function incr(name) {
-      if (this.isWebSocketEstablished === true) {
-        this.ws.send(JSON.stringify({
-          type: 'incr',
-          data: {
-            name: name
-          }
-        }));
-      } else {
-        window.location.href = '/' + name + '/incr';
-      }
-    }
-  }, {
-    key: 'onSignal',
-    value: function onSignal(signal) {
-      switch (signal.type) {
-        case 'update':
-          var counter = counters[signal.data.name];
-          if (counter) {
-            counter.update(signal.data.count);
-          }
-      }
-    }
-  }]);
+  heartbeat() {
+    this.ws.send(JSON.stringify({
+      type: 'heartbeat'
+    }));
+  }
 
-  return Command;
-}();
+  incr(name) {
+    if (this.isWebSocketEstablished === true) {
+      this.ws.send(JSON.stringify({
+        type: 'incr',
+        data: {
+          name: name
+        }
+      }));
+    }
+    else {
+      window.location.href = `/${name}/incr`;
+    }
+  }
+
+  onSignal(signal) {
+    switch (signal.type) {
+      case 'update':
+        const counter = counters[signal.data.name];
+        if (counter) {
+          counter.update(signal.data.count);
+        }
+    }
+  }
+}
 
 // globals
+let counters = {};
+const command = new Command();
 
+window.addEventListener('DOMContentLoaded', () => {
+  const $counters = document.querySelectorAll(".counter");
+  for (let i = 0; i < $counters.length; i++) {
+    const $counter = $counters[i];
+    const name = $counter.dataset.counterName.replace(/-/g, '_');
 
-var counters = {};
-var command = new Command();
-
-window.addEventListener('DOMContentLoaded', function () {
-  var $counters = document.querySelectorAll(".counter");
-
-  var _loop = function _loop(i) {
-    var $counter = $counters[i];
-    var name = $counter.dataset.counterName.replace(/-/g, '_');
-
-    var counter = new Counter(name, $counter);
+    const counter = new Counter(name, $counter);
     counters[name] = counter;
 
     $counter.querySelector('a').addEventListener('click', function (e) {
@@ -162,10 +144,6 @@ window.addEventListener('DOMContentLoaded', function () {
       e.preventDefault();
       counter.onClick();
     });
-  };
-
-  for (var i = 0; i < $counters.length; i++) {
-    _loop(i);
   }
 });
 
