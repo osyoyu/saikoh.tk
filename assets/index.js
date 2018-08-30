@@ -51,6 +51,7 @@ class Counter {
   }
 
   playSound() {
+    audioContext.resume();  // Chrome Autoplay Policy
     const source = audioContext.createBufferSource();
     source.connect(gainNode);
     source.buffer = this.audioBuffer;
@@ -71,7 +72,7 @@ class Command {
   constructor() {
     this.isWebSocketEstablished = false;
 
-    let ws = new ReconnectingWebSocket('ws://' + window.location.host + '/api/websocket');
+    let ws = new ReconnectingWebSocket('wss://' + window.location.host + '/api/websocket');
     ws.addEventListener('open', () => {
       this.isWebSocketEstablished = true;
       updateWebSocketStatusIndicator(true);
