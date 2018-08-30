@@ -7,6 +7,8 @@ require 'connection_pool'
 
 require 'json'
 
+require 'logger'
+
 require_relative './counter.rb'
 
 class SaikohTk < Sinatra::Base
@@ -24,6 +26,10 @@ class SaikohTk < Sinatra::Base
         Counter.new(3, 'imagine_the_future', 'IMAGINE THE FUTURE'),
         Counter.new(4, 'we_are_the_champions', 'We Are the Champions')
       ]
+    end
+
+    def logger
+      Thread.current[:logger] ||= Logger.new('log/logfile.log')
     end
 
     def find_counter_by_name(name)
@@ -50,7 +56,24 @@ class SaikohTk < Sinatra::Base
         ws.send(data)
       end
 
+      log(counter.name, {
+        ip: request.ip,
+        user_agent: request.user_agent
+      })
+
       return count
+    end
+
+    def log(event_type, host)
+      timestamp = Time.now.to_f
+
+      logger.info(JSON.generate({
+        event: event_type,
+        host: {
+          ip: host[:ip],
+          user_agent: host[:user_agent]
+        }
+      }))
     end
 
     def websockets
