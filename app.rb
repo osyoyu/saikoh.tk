@@ -29,6 +29,7 @@ class SaikohTk < Sinatra::Base
     end
 
     def logger
+      Dir.mkdir('log') unless Dir.exist?('log')
       Thread.current[:logger] ||= Logger.new('log/logfile.log')
     end
 
