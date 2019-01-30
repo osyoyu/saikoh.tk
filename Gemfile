@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 gem 'unicorn'
 
-gem 'sinatra'
+gem 'sinatra', '>= 2.0.2'
 gem 'sinatra-websocket'
 gem 'redis', '~> 4.0.1'
 gem 'redis-objects', '~> 1.2.1'
