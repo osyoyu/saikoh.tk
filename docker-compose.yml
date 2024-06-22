@@ -1,4 +1,3 @@
-version: '2'
 services:
   redis:
     image: "redis:3.2"
@@ -7,11 +6,9 @@ services:
 
   web:
     build: .
-    command: bundle exec rackup -o '0.0.0.0' -p 3000
-    volumes:
-      - ".:/saikoh.tk"
+    command: bundle exec thin -R config.ru -a '0.0.0.0' -p 9292 start
     ports:
-      - "60001:3000"
+      - "9292:9292"
     environment:
       - RACK_ENV=production
       - REDIS_URL=redis://redis:6379
