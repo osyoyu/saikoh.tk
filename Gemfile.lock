@@ -64,7 +64,6 @@ PLATFORMS
 
 DEPENDENCIES
   connection_pool
-  ffi (~> 1.17.0)
   pry
   redis (~> 4.0.1)
   redis-objects (~> 1.2.1)
